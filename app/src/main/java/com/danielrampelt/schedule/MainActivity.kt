@@ -3,7 +3,9 @@ package com.danielrampelt.schedule
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -54,6 +56,7 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -75,6 +78,16 @@ data class Event(
     val start: LocalDateTime,
     val end: LocalDateTime,
     val description: String? = null,
+    val type: Int? = null,
+    val eventProps: EventProps? = null,
+)
+//type = 1 event
+//2, Training/Break/DayOff
+
+
+data class EventProps(
+    val textColor: String,
+    val borderColor: String,
 )
 
 inline class SplitType private constructor(val value: Int) {
@@ -97,6 +110,8 @@ data class PositionedEvent(
     val colTotal: Int = 1,
 )
 
+//TODO MAKE IT DYNAMIC FOR TODAY
+val daysToAdd: Long = 2
 val EventTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 
 @Composable
@@ -105,67 +120,160 @@ fun BasicEvent(
     modifier: Modifier = Modifier,
 ) {
     val event = positionedEvent.event
-    val topRadius = if (positionedEvent.splitType == SplitType.Start || positionedEvent.splitType == SplitType.Both) 0.dp else 4.dp
-    val bottomRadius = if (positionedEvent.splitType == SplitType.End || positionedEvent.splitType == SplitType.Both) 0.dp else 4.dp
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(
-                end = 2.dp,
-                bottom = if (positionedEvent.splitType == SplitType.End) 0.dp else 2.dp
-            )
-            .clipToBounds()
-            .background(
-                event.color,
-                shape = RoundedCornerShape(
-                    topStart = topRadius,
-                    topEnd = topRadius,
-                    bottomEnd = bottomRadius,
-                    bottomStart = bottomRadius,
+    val topRadius =
+        if (positionedEvent.splitType == SplitType.Start || positionedEvent.splitType == SplitType.Both) 0.dp else 4.dp
+    val bottomRadius =
+        if (positionedEvent.splitType == SplitType.End || positionedEvent.splitType == SplitType.Both) 0.dp else 4.dp
+
+    if (event.type?.equals(2) == true){
+//        Training/Break/Continue
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(
+                    end = 2.dp,
+                    bottom = if (positionedEvent.splitType == SplitType.End) 0.dp else 2.dp
                 )
-            )
-            .padding(4.dp)
-    ) {
-        Text(
-            text = "${event.start.format(EventTimeFormatter)} - ${event.end.format(EventTimeFormatter)}",
-            style = MaterialTheme.typography.caption,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
-        )
+                .clipToBounds()
+                .background(
+                    event.color,
+                    shape = RoundedCornerShape(
+                        topStart = topRadius,
+                        topEnd = topRadius,
+                        bottomEnd = bottomRadius,
+                        bottomStart = bottomRadius,
+                    )
+                )
+                .border(
+                    width = 2.dp,
+                    color = Color(android.graphics.Color.parseColor(event.eventProps?.borderColor.toString()))
+                )
+                .padding(4.dp)
+        ) {
+            Canvas(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // TODO Change 5 to some value
+                val endY = maxOf(size.width, size.height)*5
+                val diagonalLength = sqrt((size.width * size.width) + (size.height * size.height))
+                val numberOfLines = 35
+                val spacing = diagonalLength / numberOfLines
+                for (i in 0 until numberOfLines) {
+                    val startX = i * spacing
+                    val endX = startX - size.width // Extend lines beyond the right side of the box
+                    drawLine(
+                        color = Color(android.graphics.Color.parseColor("#E0E0E0")),
+                        start = Offset(startX, 0f),
+                        end = Offset(endX, endY),
+                        strokeWidth = 2f
+                    )
+                }
+            }
 
-        Text(
-            text = event.name,
-            style = MaterialTheme.typography.body1,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-
-        if (event.description != null) {
             Text(
-                text = event.description,
-                style = MaterialTheme.typography.body2,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.align(Alignment.Center),
+                color = Color(android.graphics.Color.parseColor(event.eventProps?.textColor.toString())),
+                text = event.name,
+                style = MaterialTheme.typography.body1,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
             )
         }
+
+    }else{
+//        Event
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    end = 2.dp,
+                    bottom = if (positionedEvent.splitType == SplitType.End) 0.dp else 2.dp
+                )
+                .clipToBounds()
+                .background(
+                    event.color,
+                    shape = RoundedCornerShape(
+                        topStart = topRadius,
+                        topEnd = topRadius,
+                        bottomEnd = bottomRadius,
+                        bottomStart = bottomRadius,
+                    )
+                )
+                .padding(4.dp)
+        ) {
+
+//            ------------------SLA BREACH LINE Start-----------------
+            if (event.end < LocalDateTime.now()){
+                Box(
+                    modifier = Modifier
+                        .width(6.dp)
+                        .fillMaxHeight()
+                        .background(Color.Red, RoundedCornerShape(2.dp))
+                        .align(Alignment.CenterStart)
+                )
+            }
+//            ------------------SLA BREACH LINE End-----------------
+
+            Column(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .fillMaxHeight()
+            ) {
+                Text(
+                    text = "${event.start.format(EventTimeFormatter)} - ${
+                        event.end.format(
+                            EventTimeFormatter
+                        )
+                    }",
+                    style = MaterialTheme.typography.caption,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
+                )
+
+                Text(
+                    text = event.name,
+                    style = MaterialTheme.typography.body1,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+
+                if (event.description != null) {
+                    Text(
+                        text = event.description,
+                        style = MaterialTheme.typography.body2,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+
     }
+
 }
 
 private val sampleEvents = listOf(
+
     Event(
         name = "Google I/O Keynote",
         color = Color(0xFFAFBBF2),
-        start = LocalDateTime.parse("2021-05-18T09:00:00"),
-        end = LocalDateTime.parse("2021-05-18T11:00:00"),
+        start = LocalDateTime.parse("2024-03-06T09:00:00"),
+        end = LocalDateTime.parse("2024-03-06T11:00:00"),
         description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
+        type = 1
     ),
     Event(
-        name = "Developer Keynote",
-        color = Color(0xFFAFBBF2),
-        start = LocalDateTime.parse("2021-05-18T09:00:00"),
-        end = LocalDateTime.parse("2021-05-18T10:00:00"),
+        name = "Training",
+        color = Color(android.graphics.Color.parseColor("#FFE0B2")),
+        start = LocalDateTime.parse("2024-03-05T05:00:00"),
+        end = LocalDateTime.parse("2024-03-05T06:30:00"),
         description = "Learn about the latest updates to our developer products and platforms from Google Developers.",
+        type = 2,
+        eventProps = EventProps(
+            textColor = "#E19236",
+            borderColor = "#E19236"
+        )
     ),
     Event(
         name = "What's new in Android",
@@ -215,7 +323,13 @@ fun EventPreview(
 ) {
     WeekScheduleTheme {
         BasicEvent(
-            PositionedEvent(event, SplitType.None, event.start.toLocalDate(), event.start.toLocalTime(), event.end.toLocalTime()),
+            PositionedEvent(
+                event,
+                SplitType.None,
+                event.start.toLocalDate(),
+                event.start.toLocalTime(),
+                event.end.toLocalTime()
+            ),
             modifier = Modifier.sizeIn(maxHeight = 64.dp)
         )
     }
@@ -227,7 +341,8 @@ private class EventDataModifier(
     override fun Density.modifyParentData(parentData: Any?) = positionedEvent
 }
 
-private fun Modifier.eventData(positionedEvent: PositionedEvent) = this.then(EventDataModifier(positionedEvent))
+private fun Modifier.eventData(positionedEvent: PositionedEvent) =
+    this.then(EventDataModifier(positionedEvent))
 
 private val DayFormatter = DateTimeFormatter.ofPattern("EE, MMM d")
 
@@ -276,6 +391,7 @@ fun ScheduleHeader(
 fun ScheduleHeaderPreview() {
     WeekScheduleTheme {
         ScheduleHeader(
+            //Preview
             minDate = LocalDate.now(),
             maxDate = LocalDate.now().plusDays(5),
             dayWidth = 256.dp,
@@ -317,7 +433,8 @@ fun ScheduleSidebar(
     val numMinutes = ChronoUnit.MINUTES.between(minTime, maxTime).toInt() + 1
     val numHours = numMinutes / 60
     val firstHour = minTime.truncatedTo(ChronoUnit.HOURS)
-    val firstHourOffsetMinutes = if (firstHour == minTime) 0 else ChronoUnit.MINUTES.between(minTime, firstHour.plusHours(1))
+    val firstHourOffsetMinutes =
+        if (firstHour == minTime) 0 else ChronoUnit.MINUTES.between(minTime, firstHour.plusHours(1))
     val firstHourOffset = hourHeight * (firstHourOffsetMinutes / 60f)
     val startTime = if (firstHour == minTime) firstHour else firstHour.plusHours(1)
     Column(modifier = modifier) {
@@ -344,7 +461,15 @@ private fun splitEvents(events: List<Event>): List<PositionedEvent> {
             val startDate = event.start.toLocalDate()
             val endDate = event.end.toLocalDate()
             if (startDate == endDate) {
-                listOf(PositionedEvent(event, SplitType.None, event.start.toLocalDate(), event.start.toLocalTime(), event.end.toLocalTime()))
+                listOf(
+                    PositionedEvent(
+                        event,
+                        SplitType.None,
+                        event.start.toLocalDate(),
+                        event.start.toLocalTime(),
+                        event.end.toLocalTime()
+                    )
+                )
             } else {
                 val days = ChronoUnit.DAYS.between(startDate, endDate)
                 val splitEvents = mutableListOf<PositionedEvent>()
@@ -431,6 +556,7 @@ sealed class ScheduleSize {
     class FixedCount(val count: Float) : ScheduleSize() {
         constructor(count: Int) : this(count.toFloat())
     }
+
     class Adaptive(val minSize: Dp) : ScheduleSize()
 }
 
@@ -438,16 +564,23 @@ sealed class ScheduleSize {
 fun Schedule(
     events: List<Event>,
     modifier: Modifier = Modifier,
-    eventContent: @Composable (positionedEvent: PositionedEvent) -> Unit = { BasicEvent(positionedEvent = it) },
+    eventContent: @Composable (positionedEvent: PositionedEvent) -> Unit = {
+        BasicEvent(
+            positionedEvent = it
+        )
+    },
     dayHeader: @Composable (day: LocalDate) -> Unit = { BasicDayHeader(day = it) },
     timeLabel: @Composable (time: LocalTime) -> Unit = { BasicSidebarLabel(time = it) },
-    minDate: LocalDate = events.minByOrNull(Event::start)?.start?.toLocalDate() ?: LocalDate.now(),
-    maxDate: LocalDate = events.maxByOrNull(Event::end)?.end?.toLocalDate() ?: LocalDate.now(),
+    minDate: LocalDate = LocalDate.now(),
+    maxDate: LocalDate = LocalDate.now().plusDays(daysToAdd),
     minTime: LocalTime = LocalTime.MIN,
     maxTime: LocalTime = LocalTime.MAX,
     daySize: ScheduleSize = ScheduleSize.FixedSize(256.dp),
     hourSize: ScheduleSize = ScheduleSize.FixedSize(64.dp),
 ) {
+//    minDate: LocalDate = events.minByOrNull(Event::start)?.start?.toLocalDate() ?: LocalDate.now(),
+//    maxDate: LocalDate = events.maxByOrNull(Event::end)?.end?.toLocalDate() ?: LocalDate.now(),
+
     val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
     val numMinutes = ChronoUnit.MINUTES.between(minTime, maxTime).toInt() + 1
     val numHours = numMinutes.toFloat() / 60f
@@ -459,12 +592,22 @@ fun Schedule(
         val dayWidth: Dp = when (daySize) {
             is ScheduleSize.FixedSize -> daySize.size
             is ScheduleSize.FixedCount -> with(LocalDensity.current) { ((constraints.maxWidth - sidebarWidth) / daySize.count).toDp() }
-            is ScheduleSize.Adaptive -> with(LocalDensity.current) { maxOf(((constraints.maxWidth - sidebarWidth) / numDays).toDp(), daySize.minSize) }
+            is ScheduleSize.Adaptive -> with(LocalDensity.current) {
+                maxOf(
+                    ((constraints.maxWidth - sidebarWidth) / numDays).toDp(),
+                    daySize.minSize
+                )
+            }
         }
         val hourHeight: Dp = when (hourSize) {
             is ScheduleSize.FixedSize -> hourSize.size
             is ScheduleSize.FixedCount -> with(LocalDensity.current) { ((constraints.maxHeight - headerHeight) / hourSize.count).toDp() }
-            is ScheduleSize.Adaptive -> with(LocalDensity.current) { maxOf(((constraints.maxHeight - headerHeight) / numHours).toDp(), hourSize.minSize) }
+            is ScheduleSize.Adaptive -> with(LocalDensity.current) {
+                maxOf(
+                    ((constraints.maxHeight - headerHeight) / numHours).toDp(),
+                    hourSize.minSize
+                )
+            }
         }
         Column(modifier = modifier) {
             ScheduleHeader(
@@ -477,9 +620,11 @@ fun Schedule(
                     .horizontalScroll(horizontalScrollState)
                     .onGloballyPositioned { headerHeight = it.size.height }
             )
-            Row(modifier = Modifier
-                .weight(1f)
-                .align(Alignment.Start)) {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .align(Alignment.Start)
+            ) {
                 ScheduleSidebar(
                     hourHeight = hourHeight,
                     minTime = minTime,
@@ -512,7 +657,11 @@ fun Schedule(
 fun BasicSchedule(
     events: List<Event>,
     modifier: Modifier = Modifier,
-    eventContent: @Composable (positionedEvent: PositionedEvent) -> Unit = { BasicEvent(positionedEvent = it) },
+    eventContent: @Composable (positionedEvent: PositionedEvent) -> Unit = {
+        BasicEvent(
+            positionedEvent = it
+        )
+    },
     minDate: LocalDate = events.minByOrNull(Event::start)?.start?.toLocalDate() ?: LocalDate.now(),
     maxDate: LocalDate = events.maxByOrNull(Event::end)?.end?.toLocalDate() ?: LocalDate.now(),
     minTime: LocalTime = LocalTime.MIN,
@@ -524,19 +673,25 @@ fun BasicSchedule(
     val numMinutes = ChronoUnit.MINUTES.between(minTime, maxTime).toInt() + 1
     val numHours = numMinutes / 60
     val dividerColor = if (MaterialTheme.colors.isLight) Color.LightGray else Color.DarkGray
-    val positionedEvents = remember(events) { arrangeEvents(splitEvents(events.sortedBy(Event::start))).filter { it.end > minTime && it.start < maxTime } }
+    val currentTime = LocalTime.now() // Get current time
+    val positionedEvents =
+        remember(events) { arrangeEvents(splitEvents(events.sortedBy(Event::start))).filter { it.end > minTime && it.start < maxTime } }
     Layout(
         content = {
-              positionedEvents.forEach { positionedEvent ->
-                  Box(modifier = Modifier.eventData(positionedEvent)) {
-                      eventContent(positionedEvent)
-                  }
-              }
+            positionedEvents.forEach { positionedEvent ->
+                Box(modifier = Modifier.eventData(positionedEvent)) {
+                    eventContent(positionedEvent)
+                }
+            }
         },
         modifier = modifier
             .drawBehind {
                 val firstHour = minTime.truncatedTo(ChronoUnit.HOURS)
-                val firstHourOffsetMinutes = if (firstHour == minTime) 0 else ChronoUnit.MINUTES.between(minTime, firstHour.plusHours(1))
+                val firstHourOffsetMinutes =
+                    if (firstHour == minTime) 0 else ChronoUnit.MINUTES.between(
+                        minTime,
+                        firstHour.plusHours(1)
+                    )
                 val firstHourOffset = (firstHourOffsetMinutes / 60f) * hourHeight.toPx()
                 repeat(numHours) {
                     drawLine(
@@ -554,24 +709,56 @@ fun BasicSchedule(
                         strokeWidth = 1.dp.toPx()
                     )
                 }
+
+//                ---------------Drawing current timeline Start--------------------------
+                val currentTimeOffset = ChronoUnit.MINUTES.between(minTime, currentTime).toFloat()
+                val currentTimeY = (currentTimeOffset / 60f) * hourHeight.toPx()
+
+                drawCircle(
+                    color = Color.Red,
+                    radius = 6.dp.toPx(),
+                    center = Offset(0f, currentTimeY)
+                )
+
+                drawLine(
+                    color = Color.Red,
+                    start = Offset(6.dp.toPx(), currentTimeY),
+                    end = Offset(size.width, currentTimeY),
+                    strokeWidth = 2.dp.toPx()
+                )
+//                ---------------Drawing current timeline End--------------------------
+
             }
     ) { measureables, constraints ->
         val height = (hourHeight.toPx() * (numMinutes / 60f)).roundToInt()
         val width = dayWidth.roundToPx() * numDays
         val placeablesWithEvents = measureables.map { measurable ->
             val splitEvent = measurable.parentData as PositionedEvent
-            val eventDurationMinutes = ChronoUnit.MINUTES.between(splitEvent.start, minOf(splitEvent.end, maxTime))
+            val eventDurationMinutes =
+                ChronoUnit.MINUTES.between(splitEvent.start, minOf(splitEvent.end, maxTime))
             val eventHeight = ((eventDurationMinutes / 60f) * hourHeight.toPx()).roundToInt()
-            val eventWidth = ((splitEvent.colSpan.toFloat() / splitEvent.colTotal.toFloat()) * dayWidth.toPx()).roundToInt()
-            val placeable = measurable.measure(constraints.copy(minWidth = eventWidth, maxWidth = eventWidth, minHeight = eventHeight, maxHeight = eventHeight))
+            val eventWidth =
+                ((splitEvent.colSpan.toFloat() / splitEvent.colTotal.toFloat()) * dayWidth.toPx()).roundToInt()
+            val placeable = measurable.measure(
+                constraints.copy(
+                    minWidth = eventWidth,
+                    maxWidth = eventWidth,
+                    minHeight = eventHeight,
+                    maxHeight = eventHeight
+                )
+            )
             Pair(placeable, splitEvent)
         }
         layout(width, height) {
             placeablesWithEvents.forEach { (placeable, splitEvent) ->
-                val eventOffsetMinutes = if (splitEvent.start > minTime) ChronoUnit.MINUTES.between(minTime, splitEvent.start) else 0
+                val eventOffsetMinutes = if (splitEvent.start > minTime) ChronoUnit.MINUTES.between(
+                    minTime,
+                    splitEvent.start
+                ) else 0
                 val eventY = ((eventOffsetMinutes / 60f) * hourHeight.toPx()).roundToInt()
                 val eventOffsetDays = ChronoUnit.DAYS.between(minDate, splitEvent.date).toInt()
-                val eventX = eventOffsetDays * dayWidth.roundToPx() + (splitEvent.col * (dayWidth.toPx() / splitEvent.colTotal.toFloat())).roundToInt()
+                val eventX =
+                    eventOffsetDays * dayWidth.roundToPx() + (splitEvent.col * (dayWidth.toPx() / splitEvent.colTotal.toFloat())).roundToInt()
                 placeable.place(eventX, eventY)
             }
         }
