@@ -131,9 +131,8 @@ data class PositionedEvent(
 
 //TODO MAKE IT DYNAMIC FOR TODAY
 
-val daysToAdd: Long = 2
-//val daysToAdd = ViewType.ThreeDayView
-val EventTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
+val daysToAdd: DayCount = DayCount.ThreeDayView
+//val daysToAdd: DayCount = DayCount.OneDayView
 
 @Composable
 fun BasicEvent(
@@ -245,7 +244,7 @@ fun UpdateEvent(positionedEvent: PositionedEvent, event: Event, modifier: Modifi
     ) {
 
 //            ------------------SLA BREACH LINE Start-----------------
-        if (event.end < LocalDateTime.now()) {
+        if (event.end < LocalDateTime.now()) {//TODO NOW
             Box(
                 modifier = Modifier
                     .width(6.dp)
@@ -527,14 +526,18 @@ fun ScheduleHeader(
     modifier: Modifier = Modifier,
     dayHeader: @Composable (day: LocalDate) -> Unit = { BasicDayHeader(day = it) },
 ) {
-    Row(modifier = modifier) {
-        val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
-        repeat(numDays) { i ->
-            Box(modifier = Modifier.width(dayWidth)) {
-                dayHeader(minDate.plusDays(i.toLong()))
+    if (daysToAdd != DayCount.OneDayView) {
+        Row(modifier = modifier) {
+            val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
+            repeat(numDays) { i ->
+                Box(modifier = Modifier.width(dayWidth)) {
+                    dayHeader(minDate.plusDays(i.toLong()))
+                }
             }
         }
     }
+
+
 }
 
 @Preview(showBackground = true)
@@ -726,8 +729,11 @@ fun Schedule(
     },
     dayHeader: @Composable (day: LocalDate) -> Unit = { BasicDayHeader(day = it) },
     timeLabel: @Composable (time: LocalTime) -> Unit = { BasicSidebarLabel(time = it) },
-    minDate: LocalDate = LocalDate.now(),
-    maxDate: LocalDate = LocalDate.now().plusDays(daysToAdd),
+    minDate: LocalDate = LocalDate.now(),//TODO NOW
+    maxDate: LocalDate = when (daysToAdd) {
+        DayCount.OneDayView -> LocalDate.now()//TODO NOW
+        DayCount.ThreeDayView -> LocalDate.now().plusDays(2)//TODO NOW
+    },
     daySize: Dp = GridDimensions.height,
     hourSize: Dp = GridDimensions.width,
 ) {
@@ -795,8 +801,8 @@ fun BasicSchedule(
             positionedEvent = it
         )
     },
-    minDate: LocalDate = events.minByOrNull(Event::start)?.start?.toLocalDate() ?: LocalDate.now(),
-    maxDate: LocalDate = events.maxByOrNull(Event::end)?.end?.toLocalDate() ?: LocalDate.now(),
+    minDate: LocalDate = events.minByOrNull(Event::start)?.start?.toLocalDate() ?: LocalDate.now(),//TODO NOW
+    maxDate: LocalDate = events.maxByOrNull(Event::end)?.end?.toLocalDate() ?: LocalDate.now(),//TODO NOW
     dayWidth: Dp,
     hourHeight: Dp,
 ) {
@@ -808,7 +814,7 @@ fun BasicSchedule(
 
 //    --------------- SETUP END MAX TIME-------------------
 
-    val lastUpdateTime = remember { mutableStateOf(LocalDateTime.now()) }
+    val lastUpdateTime = remember { mutableStateOf(LocalDateTime.now()) }//TODO NOW
 
     LaunchedEffect(lastUpdateTime.value) {
         while (true) {
@@ -817,7 +823,7 @@ fun BasicSchedule(
         }
     }
 
-    val currentTime = LocalTime.now()
+    val currentTime = LocalTime.now()//TODO NOW
 
     val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
     val numMinutes = ChronoUnit.MINUTES.between(minTimes, maxTimes).toInt() + 1
@@ -939,11 +945,15 @@ fun SchedulePreview() {
 }
 
 object GridDimensions {
-    val height = 120.dp //DaySize
-    val width = 80.dp //HourSize
+    val height: Dp
+        get() = when (daysToAdd) {
+            DayCount.OneDayView -> 350.dp // DaySize when daysToAdd is Zero
+            DayCount.ThreeDayView -> 120.dp // DaySize when daysToAdd is One
+        }
+    val width = 80.dp // HourSize
 }
 
-sealed class ViewType {
-    object OneDayView : ViewType()
-    object ThreeDayView : ViewType()
+sealed class DayCount {
+    object OneDayView : DayCount()
+    object ThreeDayView : DayCount()
 }
