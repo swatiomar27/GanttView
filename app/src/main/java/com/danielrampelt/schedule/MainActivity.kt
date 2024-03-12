@@ -90,6 +90,7 @@ class MainActivity : ComponentActivity() {
 
 data class Event(
     val name: String,
+    val initialName: String? = "",
     val color: Color,
     val start: LocalDateTime,
     val end: LocalDateTime,
@@ -102,8 +103,10 @@ data class Event(
 
 
 data class EventProps(
-    val textColor: String,
-    val borderColor: String,
+    val textColor: String? = null,
+    val borderColor: String? = null,
+    val priority: Boolean = false,
+    val initialBgColor: String? = null
 )
 
 inline class SplitType private constructor(val value: Int) {
@@ -268,10 +271,10 @@ fun UpdateEvent(positionedEvent: PositionedEvent, event: Event, modifier: Modifi
                     modifier = Modifier
                         .size(20.dp)
                         .clip(CircleShape)
-                        .background(Color(android.graphics.Color.parseColor("#E69F00")))
+                        .background(Color(android.graphics.Color.parseColor(event.eventProps?.initialBgColor?:"#E69F00")))
                 ) {
                     Text(
-                        text = "FR",
+                        text = event.initialName ?: "",
                         style = MaterialTheme.typography.body1.copy(fontSize = 12.sp),
                         color = Color(android.graphics.Color.parseColor("#FFFFFF")),
                         textAlign = TextAlign.Center,
@@ -279,23 +282,25 @@ fun UpdateEvent(positionedEvent: PositionedEvent, event: Event, modifier: Modifi
                     )
                 }
 
-                Spacer(modifier = Modifier.width(6.dp))
+                if (event.eventProps?.priority == true) {
+                    Spacer(modifier = Modifier.width(6.dp))
 
-                Image(
-                    painter = painterResource(id = R.drawable.ic_priority),
-                    contentDescription = null,
-                    modifier = Modifier.size(12.dp)
-                )
+                    Image(
+                        painter = painterResource(id = R.drawable.ic_priority),
+                        contentDescription = null,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 color = Color(android.graphics.Color.parseColor("#2D2D2D")),
                 text = event.name,
                 style = MaterialTheme.typography.body1,
                 fontWeight = FontWeight.Normal,
-                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
 
@@ -333,11 +338,11 @@ fun HalfHourEventStrips(event: Event) {
                                 .weight(1f)
                                 .fillMaxWidth()
                                 .padding(1.dp),
-                            color = Color(android.graphics.Color.parseColor("#CF9044")),
+                            color = event.color ?: Color(android.graphics.Color.parseColor("#CF9044")),
                             shape = RoundedShape,
                             border = BorderStroke(
                                 1.dp,
-                                Color(android.graphics.Color.parseColor("#E8E9E8"))
+                                Color(android.graphics.Color.parseColor(event.eventProps?.borderColor?:"#E8E9E8"))
                             )
                         ) {}
                     }
@@ -356,12 +361,17 @@ fun isEndWithinHalfHour(start: LocalDateTime, end: LocalDateTime, minutes: Long)
 private val sampleEvents = listOf(
 
     Event(
-        name = "Broadband, Install",
+        name = "Broadband, Install test data",
+        initialName = "FR",
         color = Color(0xFFAFBBF2),
         start = LocalDateTime.parse("2024-03-13T09:00:00"),
         end = LocalDateTime.parse("2024-03-13T11:00:00"),
         description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
-        type = 1
+        type = 1,
+        eventProps = EventProps(
+            priority = true,
+            initialBgColor = "#469C76"
+        )
     ),
     Event(
         name = "Training",
@@ -377,24 +387,28 @@ private val sampleEvents = listOf(
     ),
     Event(
         name = "What's new in Android",
-        color = Color(0xFF1B998B),
+        color = Color(android.graphics.Color.parseColor("#CF9044")),
         start = LocalDateTime.parse("2024-03-12T09:00:00"),
         end = LocalDateTime.parse("2024-03-12T09:30:00"),
         description = "In this Keynote, Chet Haase, Dan Sandler, and Romain Guy discuss the latest Android features and enhancements for developers.",
+        eventProps = EventProps(borderColor = "#E8E9E8")
     ),
     Event(
         name = "Broadband, Fault Repair",
+        initialName = "I",
         color = Color(0xFF6DD3CE),
         start = LocalDateTime.parse("2024-03-12T13:00:00"),
-        end = LocalDateTime.parse("2024-03-12T14:00:00"),
+        end = LocalDateTime.parse("2024-03-12T13:32:00"),
         description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
+        eventProps = EventProps(initialBgColor = "#0072B2")
     ),
     Event(
         name = "15 mins view",
-        color = Color(0xFFF4BFDB),
+        color = Color(android.graphics.Color.parseColor("#CF9044")),
         start = LocalDateTime.parse("2024-03-12T15:00:00"),
         end = LocalDateTime.parse("2024-03-12T15:20:00"),
         description = "Learn about the latest and greatest in ML from Google. We’ll cover what’s available to developers when it comes to creating, understanding, and deploying models for a variety of different applications.",
+        eventProps = EventProps(borderColor = "#E8E9E8")
     ),
     Event(
         name = "What's new in Machine Learning",
