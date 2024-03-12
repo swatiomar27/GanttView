@@ -1,6 +1,7 @@
 package com.danielrampelt.schedule
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -33,6 +35,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,6 +65,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.danielrampelt.schedule.ui.theme.WeekScheduleTheme
+import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -456,22 +460,26 @@ fun BasicDayHeader(
 
 @Composable
 fun RoundedDateBox(date: LocalDate) {
+    val today = LocalDate.now()
     val dayFormatter = DateTimeFormatter.ofPattern("EEE")
     val dateFormatter = DateTimeFormatter.ofPattern("dd")
+
+    val backgroundColor = if (date == today) Color(android.graphics.Color.parseColor("#E1EFFF")) else Color(android.graphics.Color.parseColor("#F0F0F0"))
+    val textColor = if (date == today) Color(android.graphics.Color.parseColor("#027BFC")) else Color(android.graphics.Color.parseColor("#292C31"))
 
     Box(
         modifier = Modifier
             .padding(6.dp)
             .background(
-                color = Color(android.graphics.Color.parseColor("#F0F0F0")),
+                color = backgroundColor,
                 shape = RoundedCornerShape(12.dp)
             )
             .padding(top = 8.dp, bottom = 8.dp, start = 18.dp, end = 18.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = dateFormatter.format(date), style = MaterialTheme.typography.h5.copy(fontSize = 24.sp))
-            Text(text = dayFormatter.format(date), style = MaterialTheme.typography.subtitle1.copy(fontSize = 16.sp))
+            Text(text = dateFormatter.format(date), style = MaterialTheme.typography.h5.copy(fontSize = 24.sp, color = textColor))
+            Text(text = dayFormatter.format(date), style = MaterialTheme.typography.subtitle1.copy(fontSize = 16.sp, color = textColor))
         }
     }
 }
@@ -784,11 +792,11 @@ fun Schedule(
                         .horizontalScroll(horizontalScrollState)
                 )
 
-
             }
         }
     }
 }
+
 
 @Composable
 fun BasicSchedule(
@@ -806,11 +814,22 @@ fun BasicSchedule(
     dayWidth: Dp,
     hourHeight: Dp,
 ) {
+
+    val lastUpdateTime = remember { mutableStateOf(LocalDateTime.now()) }
+
+    LaunchedEffect(lastUpdateTime.value) {
+        while (true) {
+            delay(5 * 60 * 1000) // 5 minutes in milliseconds
+            lastUpdateTime.value = LocalDateTime.now()
+        }
+    }
+
+    val currentTime = LocalTime.now()
+
     val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
     val numMinutes = ChronoUnit.MINUTES.between(minTime, maxTime).toInt() + 1
     val numHours = numMinutes / 60
     val dividerColor = if (MaterialTheme.colors.isLight) Color.LightGray else Color.DarkGray
-    val currentTime = LocalTime.now() // Get current time
     val positionedEvents =
         remember(events) { arrangeEvents(splitEvents(events.sortedBy(Event::start))).filter { it.end > minTime && it.start < maxTime } }
     Layout(
@@ -851,7 +870,6 @@ fun BasicSchedule(
 
                 val currentTimeOffset = ChronoUnit.MINUTES.between(minTime, currentTime).toFloat()
                 val currentTimeY = (currentTimeOffset / 60f) * hourHeight.toPx()
-
                 drawCircle(
                     color = Color.Red,
                     radius = 6.dp.toPx(),
