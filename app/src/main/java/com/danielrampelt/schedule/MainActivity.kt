@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -870,10 +871,20 @@ fun BasicSchedule(
 
                 val currentTimeOffset = ChronoUnit.MINUTES.between(minTime, currentTime).toFloat()
                 val currentTimeY = (currentTimeOffset / 60f) * hourHeight.toPx()
-                drawCircle(
-                    color = Color.Red,
-                    radius = 6.dp.toPx(),
-                    center = Offset(0f, currentTimeY)
+
+                val triangleSize = 16.dp.toPx()
+                val triangleHalfBase = triangleSize / 2
+
+                val trianglePath = Path().apply {
+                    moveTo(-triangleHalfBase, currentTimeY - triangleSize)
+                    lineTo(triangleHalfBase, currentTimeY)
+                    lineTo(-triangleHalfBase, currentTimeY + triangleSize)
+                    close()
+                }
+
+                drawPath(
+                    path = trianglePath,
+                    color = Color.Red
                 )
 
                 drawLine(
