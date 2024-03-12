@@ -1,7 +1,6 @@
 package com.danielrampelt.schedule
 
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -224,23 +222,24 @@ fun OtherMiscEvents(
 @Composable
 fun UpdateEvent(positionedEvent: PositionedEvent, event: Event, modifier: Modifier) {
     Box(
-        modifier = modifier.then(Modifier
-            .fillMaxSize()
-            .padding(
-                end = 2.dp,
-                bottom = if (positionedEvent.splitType == SplitType.End) 0.dp else 2.dp
-            )
-            .clipToBounds()
-            .background(
-                Color(android.graphics.Color.parseColor("#FFFFFF")),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .border(
-                width = 2.dp,
-                color = Color(android.graphics.Color.parseColor("#D9D9D9")),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(4.dp)
+        modifier = modifier.then(
+            Modifier
+                .fillMaxSize()
+                .padding(
+                    end = 2.dp,
+                    bottom = if (positionedEvent.splitType == SplitType.End) 0.dp else 2.dp
+                )
+                .clipToBounds()
+                .background(
+                    Color(android.graphics.Color.parseColor("#FFFFFF")),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .border(
+                    width = 2.dp,
+                    color = Color(android.graphics.Color.parseColor("#D9D9D9")),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(4.dp)
         )
     ) {
 
@@ -336,7 +335,10 @@ fun HalfHourEventStrips(event: Event) {
                                 .padding(1.dp),
                             color = Color(android.graphics.Color.parseColor("#CF9044")),
                             shape = RoundedShape,
-                            border = BorderStroke(1.dp, Color(android.graphics.Color.parseColor("#E8E9E8")))
+                            border = BorderStroke(
+                                1.dp,
+                                Color(android.graphics.Color.parseColor("#E8E9E8"))
+                            )
                         ) {}
                     }
                 }
@@ -364,8 +366,8 @@ private val sampleEvents = listOf(
     Event(
         name = "Training",
         color = Color(android.graphics.Color.parseColor("#FFE0B2")),
-        start = LocalDateTime.parse("2024-03-12T05:00:00"),
-        end = LocalDateTime.parse("2024-03-12T06:30:00"),
+        start = LocalDateTime.parse("2024-03-12T17:00:00"),
+        end = LocalDateTime.parse("2024-03-12T18:30:00"),
         description = "Learn about the latest updates to our developer products and platforms from Google Developers.",
         type = 2,
         eventProps = EventProps(
@@ -383,15 +385,15 @@ private val sampleEvents = listOf(
     Event(
         name = "Broadband, Fault Repair",
         color = Color(0xFF6DD3CE),
-        start = LocalDateTime.parse("2024-03-12T01:00:00"),
-        end = LocalDateTime.parse("2024-03-12T02:00:00"),
+        start = LocalDateTime.parse("2024-03-12T13:00:00"),
+        end = LocalDateTime.parse("2024-03-12T14:00:00"),
         description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
     ),
     Event(
         name = "15 mins view",
         color = Color(0xFFF4BFDB),
-        start = LocalDateTime.parse("2024-03-12T03:00:00"),
-        end = LocalDateTime.parse("2024-03-12T03:20:00"),
+        start = LocalDateTime.parse("2024-03-12T15:00:00"),
+        end = LocalDateTime.parse("2024-03-12T15:20:00"),
         description = "Learn about the latest and greatest in ML from Google. We’ll cover what’s available to developers when it comes to creating, understanding, and deploying models for a variety of different applications.",
     ),
     Event(
@@ -465,8 +467,14 @@ fun RoundedDateBox(date: LocalDate) {
     val dayFormatter = DateTimeFormatter.ofPattern("EEE")
     val dateFormatter = DateTimeFormatter.ofPattern("dd")
 
-    val backgroundColor = if (date == today) Color(android.graphics.Color.parseColor("#E1EFFF")) else Color(android.graphics.Color.parseColor("#F0F0F0"))
-    val textColor = if (date == today) Color(android.graphics.Color.parseColor("#027BFC")) else Color(android.graphics.Color.parseColor("#292C31"))
+    val backgroundColor =
+        if (date == today) Color(android.graphics.Color.parseColor("#E1EFFF")) else Color(
+            android.graphics.Color.parseColor("#F0F0F0")
+        )
+    val textColor =
+        if (date == today) Color(android.graphics.Color.parseColor("#027BFC")) else Color(
+            android.graphics.Color.parseColor("#292C31")
+        )
 
     Box(
         modifier = Modifier
@@ -479,8 +487,14 @@ fun RoundedDateBox(date: LocalDate) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = dateFormatter.format(date), style = MaterialTheme.typography.h5.copy(fontSize = 24.sp, color = textColor))
-            Text(text = dayFormatter.format(date), style = MaterialTheme.typography.subtitle1.copy(fontSize = 16.sp, color = textColor))
+            Text(
+                text = dateFormatter.format(date),
+                style = MaterialTheme.typography.h5.copy(fontSize = 24.sp, color = textColor)
+            )
+            Text(
+                text = dayFormatter.format(date),
+                style = MaterialTheme.typography.subtitle1.copy(fontSize = 16.sp, color = textColor)
+            )
         }
     }
 }
@@ -555,24 +569,24 @@ fun BasicSidebarLabelPreview() {
 fun ScheduleSidebar(
     hourHeight: Dp,
     modifier: Modifier = Modifier,
-    minTime: LocalTime = LocalTime.MIN,
-    maxTime: LocalTime = LocalTime.MAX,
     label: @Composable (time: LocalTime) -> Unit = { BasicSidebarLabel(time = it) },
 ) {
 
 //    --------------- SETUP START MIN TIME-------------------
-//    var minTimes = LocalTime.parse("08:00", DateTimeFormatter.ofPattern("HH:mm"))
-//    var maxTimes = LocalTime.parse("20:00", DateTimeFormatter.ofPattern("HH:mm"))
 
-    val minTimes = minTime
-    val maxTimes = maxTime
+    val minTimes = getMinMaxTimes().first
+    val maxTimes = getMinMaxTimes().second
+
 //    --------------- SETUP END MAX TIME-------------------
 
     val numMinutes = ChronoUnit.MINUTES.between(minTimes, maxTimes).toInt() + 1
     val numHours = numMinutes / 60
     val firstHour = minTimes.truncatedTo(ChronoUnit.HOURS)
     val firstHourOffsetMinutes =
-        if (firstHour == minTimes) 0 else ChronoUnit.MINUTES.between(minTime, firstHour.plusHours(1))
+        if (firstHour == minTimes) 0 else ChronoUnit.MINUTES.between(
+            minTimes,
+            firstHour.plusHours(1)
+        )
     val firstHourOffset = hourHeight * (firstHourOffsetMinutes / 60f)
     val startTime = if (firstHour == minTimes) firstHour else firstHour.plusHours(1)
     Column(modifier = modifier) {
@@ -689,15 +703,6 @@ private fun arrangeEvents(events: List<PositionedEvent>): List<PositionedEvent> 
     return positionedEvents
 }
 
-sealed class ScheduleSize {
-    class FixedSize(val size: Dp) : ScheduleSize()
-    class FixedCount(val count: Float) : ScheduleSize() {
-        constructor(count: Int) : this(count.toFloat())
-    }
-
-    class Adaptive(val minSize: Dp) : ScheduleSize()
-}
-
 @Composable
 fun Schedule(
     events: List<Event>,
@@ -713,8 +718,8 @@ fun Schedule(
     maxDate: LocalDate = LocalDate.now().plusDays(daysToAdd),
     minTime: LocalTime = LocalTime.MIN,
     maxTime: LocalTime = LocalTime.MAX,
-    daySize: ScheduleSize = ScheduleSize.FixedSize(120.dp),
-    hourSize: ScheduleSize = ScheduleSize.FixedSize(80.dp),
+    daySize: Dp = gridDimensions.height,
+    hourSize: Dp = gridDimensions.width,
 ) {
 //    minDate: LocalDate = events.minByOrNull(Event::start)?.start?.toLocalDate() ?: LocalDate.now(),
 //    maxDate: LocalDate = events.maxByOrNull(Event::end)?.end?.toLocalDate() ?: LocalDate.now(),
@@ -727,31 +732,12 @@ fun Schedule(
     var sidebarWidth by remember { mutableStateOf(0) }
     var headerHeight by remember { mutableStateOf(0) }
     BoxWithConstraints(modifier = modifier) {
-        val dayWidth: Dp = when (daySize) {
-            is ScheduleSize.FixedSize -> daySize.size
-            is ScheduleSize.FixedCount -> with(LocalDensity.current) { ((constraints.maxWidth - sidebarWidth) / daySize.count).toDp() }
-            is ScheduleSize.Adaptive -> with(LocalDensity.current) {
-                maxOf(
-                    ((constraints.maxWidth - sidebarWidth) / numDays).toDp(),
-                    daySize.minSize
-                )
-            }
-        }
-        val hourHeight: Dp = when (hourSize) {
-            is ScheduleSize.FixedSize -> hourSize.size
-            is ScheduleSize.FixedCount -> with(LocalDensity.current) { ((constraints.maxHeight - headerHeight) / hourSize.count).toDp() }
-            is ScheduleSize.Adaptive -> with(LocalDensity.current) {
-                maxOf(
-                    ((constraints.maxHeight - headerHeight) / numHours).toDp(),
-                    hourSize.minSize
-                )
-            }
-        }
+
         Column(modifier = modifier) {
             ScheduleHeader(
                 minDate = minDate,
                 maxDate = maxDate,
-                dayWidth = dayWidth,
+                dayWidth = daySize,
                 dayHeader = dayHeader,
                 modifier = Modifier
                     .background(Color(android.graphics.Color.parseColor("#FAFAFA")))
@@ -768,29 +754,25 @@ fun Schedule(
             ) {
 
                 ScheduleSidebar(
-                    hourHeight = hourHeight,
-                    minTime = minTime,
-                    maxTime = maxTime,
-                    label = timeLabel,
+                    hourHeight = hourSize,
                     modifier = Modifier
                         .background(Color(android.graphics.Color.parseColor("#E8E9E8")))
                         .verticalScroll(verticalScrollState)
-                        .onGloballyPositioned { sidebarWidth = it.size.width }
+                        .onGloballyPositioned { sidebarWidth = it.size.width },
+                    label = timeLabel
                 )
                 BasicSchedule(
                     events = events,
-                    eventContent = eventContent,
-                    minDate = minDate,
-                    maxDate = maxDate,
-                    minTime = minTime,
-                    maxTime = maxTime,
-                    dayWidth = dayWidth,
-                    hourHeight = hourHeight,
                     modifier = Modifier
                         .weight(1f)
                         .background(Color(android.graphics.Color.parseColor("#FAFAFA")))
                         .verticalScroll(verticalScrollState)
-                        .horizontalScroll(horizontalScrollState)
+                        .horizontalScroll(horizontalScrollState),
+                    eventContent = eventContent,
+                    minDate = minDate,
+                    maxDate = maxDate,
+                    dayWidth = daySize,
+                    hourHeight = hourSize
                 )
 
             }
@@ -810,11 +792,16 @@ fun BasicSchedule(
     },
     minDate: LocalDate = events.minByOrNull(Event::start)?.start?.toLocalDate() ?: LocalDate.now(),
     maxDate: LocalDate = events.maxByOrNull(Event::end)?.end?.toLocalDate() ?: LocalDate.now(),
-    minTime: LocalTime = LocalTime.MIN,
-    maxTime: LocalTime = LocalTime.MAX,
     dayWidth: Dp,
     hourHeight: Dp,
 ) {
+
+//    --------------- SETUP START MIN TIME-------------------
+
+    val minTimes = getMinMaxTimes().first
+    val maxTimes = getMinMaxTimes().second
+
+//    --------------- SETUP END MAX TIME-------------------
 
     val lastUpdateTime = remember { mutableStateOf(LocalDateTime.now()) }
 
@@ -828,11 +815,11 @@ fun BasicSchedule(
     val currentTime = LocalTime.now()
 
     val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
-    val numMinutes = ChronoUnit.MINUTES.between(minTime, maxTime).toInt() + 1
+    val numMinutes = ChronoUnit.MINUTES.between(minTimes, maxTimes).toInt() + 1
     val numHours = numMinutes / 60
     val dividerColor = if (MaterialTheme.colors.isLight) Color.LightGray else Color.DarkGray
     val positionedEvents =
-        remember(events) { arrangeEvents(splitEvents(events.sortedBy(Event::start))).filter { it.end > minTime && it.start < maxTime } }
+        remember(events) { arrangeEvents(splitEvents(events.sortedBy(Event::start))).filter { it.end > minTimes && it.start < maxTimes } }
     Layout(
         content = {
             positionedEvents.forEach { positionedEvent ->
@@ -843,10 +830,10 @@ fun BasicSchedule(
         },
         modifier = modifier
             .drawBehind {
-                val firstHour = minTime.truncatedTo(ChronoUnit.HOURS)
+                val firstHour = minTimes.truncatedTo(ChronoUnit.HOURS)
                 val firstHourOffsetMinutes =
-                    if (firstHour == minTime) 0 else ChronoUnit.MINUTES.between(
-                        minTime,
+                    if (firstHour == minTimes) 0 else ChronoUnit.MINUTES.between(
+                        minTimes,
                         firstHour.plusHours(1)
                     )
                 val firstHourOffset = (firstHourOffsetMinutes / 60f) * hourHeight.toPx()
@@ -869,7 +856,7 @@ fun BasicSchedule(
 
 //                ---------------Drawing current timeline Start--------------------------
 
-                val currentTimeOffset = ChronoUnit.MINUTES.between(minTime, currentTime).toFloat()
+                val currentTimeOffset = ChronoUnit.MINUTES.between(minTimes, currentTime).toFloat()
                 val currentTimeY = (currentTimeOffset / 60f) * hourHeight.toPx()
 
                 val triangleSize = 16.dp.toPx()
@@ -902,10 +889,9 @@ fun BasicSchedule(
         val placeablesWithEvents = measureables.map { measurable ->
             val splitEvent = measurable.parentData as PositionedEvent
             val eventDurationMinutes =
-                ChronoUnit.MINUTES.between(splitEvent.start, minOf(splitEvent.end, maxTime))
+                ChronoUnit.MINUTES.between(splitEvent.start, minOf(splitEvent.end, maxTimes))
             val eventHeight = ((eventDurationMinutes / 60f) * hourHeight.toPx()).roundToInt()
-            val eventWidth =
-                ((splitEvent.colSpan.toFloat() / splitEvent.colTotal.toFloat()) * dayWidth.toPx()).roundToInt()
+            val eventWidth = dayWidth.toPx().roundToInt()
             val placeable = measurable.measure(
                 constraints.copy(
                     minWidth = eventWidth,
@@ -918,18 +904,25 @@ fun BasicSchedule(
         }
         layout(width, height) {
             placeablesWithEvents.forEach { (placeable, splitEvent) ->
-                val eventOffsetMinutes = if (splitEvent.start > minTime) ChronoUnit.MINUTES.between(
-                    minTime,
-                    splitEvent.start
-                ) else 0
-                val eventY = ((eventOffsetMinutes / 60f) * hourHeight.toPx()).roundToInt()
+                val eventOffsetMinutes =
+                    if (splitEvent.start > minTimes) ChronoUnit.MINUTES.between(
+                        minTimes,
+                        splitEvent.start
+                    ) else 0
                 val eventOffsetDays = ChronoUnit.DAYS.between(minDate, splitEvent.date).toInt()
                 val eventX =
                     eventOffsetDays * dayWidth.roundToPx() + (splitEvent.col * (dayWidth.toPx() / splitEvent.colTotal.toFloat())).roundToInt()
+                val eventY = ((eventOffsetMinutes / 60f) * hourHeight.toPx()).roundToInt()
                 placeable.place(eventX, eventY)
             }
         }
     }
+}
+
+fun getMinMaxTimes(): Pair<LocalTime, LocalTime> {
+    val minTime = LocalTime.parse("08:00", DateTimeFormatter.ofPattern("HH:mm")) ?: LocalTime.MIN
+    val maxTime = LocalTime.parse("20:00", DateTimeFormatter.ofPattern("HH:mm")) ?: LocalTime.MAX
+    return minTime to maxTime
 }
 
 @Preview(showBackground = true)
@@ -938,4 +931,9 @@ fun SchedulePreview() {
     WeekScheduleTheme {
         Schedule(sampleEvents)
     }
+}
+
+object gridDimensions {
+    val height = 120.dp //DaySize
+    val width = 80.dp //HourSize
 }
