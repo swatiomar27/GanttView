@@ -130,7 +130,9 @@ data class PositionedEvent(
 )
 
 //TODO MAKE IT DYNAMIC FOR TODAY
+
 val daysToAdd: Long = 2
+//val daysToAdd = ViewType.ThreeDayView
 val EventTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 
 @Composable
@@ -139,10 +141,6 @@ fun BasicEvent(
     modifier: Modifier = Modifier,
 ) {
     val event = positionedEvent.event
-    val topRadius =
-        if (positionedEvent.splitType == SplitType.Start || positionedEvent.splitType == SplitType.Both) 0.dp else 4.dp
-    val bottomRadius =
-        if (positionedEvent.splitType == SplitType.End || positionedEvent.splitType == SplitType.Both) 0.dp else 4.dp
 
     if (event.type?.equals(2) == true) {
 //        Training/Break/Continue
@@ -730,17 +728,10 @@ fun Schedule(
     timeLabel: @Composable (time: LocalTime) -> Unit = { BasicSidebarLabel(time = it) },
     minDate: LocalDate = LocalDate.now(),
     maxDate: LocalDate = LocalDate.now().plusDays(daysToAdd),
-    minTime: LocalTime = LocalTime.MIN,
-    maxTime: LocalTime = LocalTime.MAX,
-    daySize: Dp = gridDimensions.height,
-    hourSize: Dp = gridDimensions.width,
+    daySize: Dp = GridDimensions.height,
+    hourSize: Dp = GridDimensions.width,
 ) {
-//    minDate: LocalDate = events.minByOrNull(Event::start)?.start?.toLocalDate() ?: LocalDate.now(),
-//    maxDate: LocalDate = events.maxByOrNull(Event::end)?.end?.toLocalDate() ?: LocalDate.now(),
 
-    val numDays = ChronoUnit.DAYS.between(minDate, maxDate).toInt() + 1
-    val numMinutes = ChronoUnit.MINUTES.between(minTime, maxTime).toInt() + 1
-    val numHours = numMinutes.toFloat() / 60f
     val verticalScrollState = rememberScrollState()
     val horizontalScrollState = rememberScrollState()
     var sidebarWidth by remember { mutableStateOf(0) }
@@ -947,7 +938,12 @@ fun SchedulePreview() {
     }
 }
 
-object gridDimensions {
+object GridDimensions {
     val height = 120.dp //DaySize
     val width = 80.dp //HourSize
+}
+
+sealed class ViewType {
+    object OneDayView : ViewType()
+    object ThreeDayView : ViewType()
 }
