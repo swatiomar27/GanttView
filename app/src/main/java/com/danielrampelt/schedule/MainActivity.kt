@@ -129,8 +129,6 @@ data class PositionedEvent(
     val colTotal: Int = 1,
 )
 
-//TODO MAKE IT DYNAMIC FOR TODAY
-
 val daysToAdd: DayCount = DayCount.ThreeDayView
 //val daysToAdd: DayCount = DayCount.OneDayView
 
