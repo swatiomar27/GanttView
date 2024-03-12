@@ -1,12 +1,17 @@
 package com.danielrampelt.schedule
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -17,9 +22,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
@@ -32,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -39,7 +47,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.ParentDataModifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,7 +60,9 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.danielrampelt.schedule.ui.theme.WeekScheduleTheme
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -125,149 +138,229 @@ fun BasicEvent(
     val bottomRadius =
         if (positionedEvent.splitType == SplitType.End || positionedEvent.splitType == SplitType.Both) 0.dp else 4.dp
 
-    if (event.type?.equals(2) == true){
+    if (event.type?.equals(2) == true) {
 //        Training/Break/Continue
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(
-                    end = 2.dp,
-                    bottom = if (positionedEvent.splitType == SplitType.End) 0.dp else 2.dp
-                )
-                .clipToBounds()
-                .background(
-                    event.color,
-                    shape = RoundedCornerShape(
-                        topStart = topRadius,
-                        topEnd = topRadius,
-                        bottomEnd = bottomRadius,
-                        bottomStart = bottomRadius,
-                    )
-                )
-                .border(
-                    width = 2.dp,
-                    color = Color(android.graphics.Color.parseColor(event.eventProps?.borderColor.toString()))
-                )
-                .padding(4.dp)
-        ) {
-            Canvas(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                // TODO Change 5 to some value
-                val endY = maxOf(size.width, size.height)*5
-                val diagonalLength = sqrt((size.width * size.width) + (size.height * size.height))
-                val numberOfLines = 35
-                val spacing = diagonalLength / numberOfLines
-                for (i in 0 until numberOfLines) {
-                    val startX = i * spacing
-                    val endX = startX - size.width // Extend lines beyond the right side of the box
-                    drawLine(
-                        color = Color(android.graphics.Color.parseColor("#E0E0E0")),
-                        start = Offset(startX, 0f),
-                        end = Offset(endX, endY),
-                        strokeWidth = 2f
-                    )
-                }
-            }
+        OtherMiscEvents(modifier, positionedEvent, event)
 
-            Text(
-                modifier = Modifier.align(Alignment.Center),
-                color = Color(android.graphics.Color.parseColor(event.eventProps?.textColor.toString())),
-                text = event.name,
-                style = MaterialTheme.typography.body1,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-        }
-
-    }else{
+    } else {
 //        Event
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    end = 2.dp,
-                    bottom = if (positionedEvent.splitType == SplitType.End) 0.dp else 2.dp
-                )
-                .clipToBounds()
-                .background(
-                    event.color,
-                    shape = RoundedCornerShape(
-                        topStart = topRadius,
-                        topEnd = topRadius,
-                        bottomEnd = bottomRadius,
-                        bottomStart = bottomRadius,
-                    )
-                )
-                .padding(4.dp)
-        ) {
+        if (isEndWithinHalfHour(event.start, event.end, 30)) {
+            HalfHourEventStrips(event)
+        } else {
+            val context = LocalContext.current
+            val modifier = Modifier.clickable {
+                Toast.makeText(context, "Event: ${event.name}", Toast.LENGTH_SHORT).show()
 
-//            ------------------SLA BREACH LINE Start-----------------
-            if (event.end < LocalDateTime.now()){
-                Box(
-                    modifier = Modifier
-                        .width(6.dp)
-                        .fillMaxHeight()
-                        .background(Color.Red, RoundedCornerShape(2.dp))
-                        .align(Alignment.CenterStart)
-                )
             }
-//            ------------------SLA BREACH LINE End-----------------
-
-            Column(
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .fillMaxHeight()
-            ) {
-                Text(
-                    text = "${event.start.format(EventTimeFormatter)} - ${
-                        event.end.format(
-                            EventTimeFormatter
-                        )
-                    }",
-                    style = MaterialTheme.typography.caption,
-                    maxLines = 1,
-                    overflow = TextOverflow.Clip,
-                )
-
-                Text(
-                    text = event.name,
-                    style = MaterialTheme.typography.body1,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-
-                if (event.description != null) {
-                    Text(
-                        text = event.description,
-                        style = MaterialTheme.typography.body2,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
+            UpdateEvent(positionedEvent, event, modifier)
         }
+
 
     }
 
 }
 
+@Composable
+fun OtherMiscEvents(
+    modifier: Modifier,
+    positionedEvent: PositionedEvent,
+    event: Event,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(
+                end = 2.dp,
+                bottom = if (positionedEvent.splitType == SplitType.End) 0.dp else 2.dp
+            )
+            .clipToBounds()
+            .background(
+                event.color,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .border(
+                width = 2.dp,
+                color = Color(android.graphics.Color.parseColor(event.eventProps?.borderColor)),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(4.dp)
+    ) {
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // TODO Change 5 to some value
+            val endY = maxOf(size.width, size.height) * 5
+            val diagonalLength = sqrt((size.width * size.width) + (size.height * size.height))
+            val numberOfLines = 35
+            val spacing = diagonalLength / numberOfLines
+            for (i in 0 until numberOfLines) {
+                val startX = i * spacing
+                val endX = startX - size.width // Extend lines beyond the right side of the box
+                drawLine(
+                    color = Color(android.graphics.Color.parseColor("#E0E0E0")),
+                    start = Offset(startX, 0f),
+                    end = Offset(endX, endY),
+                    strokeWidth = 2f
+                )
+            }
+        }
+
+        Text(
+            modifier = Modifier.align(Alignment.Center),
+            color = Color(android.graphics.Color.parseColor(event.eventProps?.textColor.toString())),
+            text = event.name,
+            style = MaterialTheme.typography.body1,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun UpdateEvent(positionedEvent: PositionedEvent, event: Event, modifier: Modifier) {
+    Box(
+        modifier = modifier.then(Modifier
+            .fillMaxSize()
+            .padding(
+                end = 2.dp,
+                bottom = if (positionedEvent.splitType == SplitType.End) 0.dp else 2.dp
+            )
+            .clipToBounds()
+            .background(
+                Color(android.graphics.Color.parseColor("#FFFFFF")),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .border(
+                width = 2.dp,
+                color = Color(android.graphics.Color.parseColor("#D9D9D9")),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .padding(4.dp)
+        )
+    ) {
+
+//            ------------------SLA BREACH LINE Start-----------------
+        if (event.end < LocalDateTime.now()) {
+            Box(
+                modifier = Modifier
+                    .width(6.dp)
+                    .fillMaxHeight()
+                    .clipToBounds()
+                    .background(Color.Red)
+                    .align(Alignment.CenterStart)
+                    .clip(RoundedCornerShape(16.dp))
+            )
+        }
+//            ------------------SLA BREACH LINE End-----------------
+
+        Column(
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .fillMaxHeight()
+        ) {
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clip(CircleShape)
+                        .background(Color(android.graphics.Color.parseColor("#E69F00")))
+                ) {
+                    Text(
+                        text = "FR",
+                        style = MaterialTheme.typography.body1.copy(fontSize = 12.sp),
+                        color = Color(android.graphics.Color.parseColor("#FFFFFF")),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
+                Image(
+                    painter = painterResource(id = R.drawable.ic_priority),
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                color = Color(android.graphics.Color.parseColor("#2D2D2D")),
+                text = event.name,
+                style = MaterialTheme.typography.body1,
+                fontWeight = FontWeight.Normal,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+        }
+    }
+}
+
+@Composable
+fun HalfHourEventStrips(event: Event) {
+    val RoundedShape = MaterialTheme.shapes.medium
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clipToBounds()
+            .background(
+                Color.Transparent,
+                shape = RoundedCornerShape(14.dp)
+            )
+            .padding(0.dp),
+        content = {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                content = {
+                    val durationMinutes = Duration.between(event.start, event.end).toMinutes()
+
+                    val numSurfaces = when {
+                        durationMinutes <= 10 -> 1
+                        durationMinutes <= 20 -> 2
+                        else -> 3
+                    }
+
+                    repeat(numSurfaces) {
+                        Surface(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .padding(1.dp),
+                            color = Color(android.graphics.Color.parseColor("#CF9044")),
+                            shape = RoundedShape,
+                            border = BorderStroke(1.dp, Color(android.graphics.Color.parseColor("#E8E9E8")))
+                        ) {}
+                    }
+                }
+            )
+        }
+    )
+}
+
+fun isEndWithinHalfHour(start: LocalDateTime, end: LocalDateTime, minutes: Long): Boolean {
+    val halfHour = Duration.ofMinutes(minutes)
+    val duration = Duration.between(start, end)
+    return duration <= halfHour
+}
+
 private val sampleEvents = listOf(
 
     Event(
-        name = "Google I/O Keynote",
+        name = "Broadband, Install",
         color = Color(0xFFAFBBF2),
-        start = LocalDateTime.parse("2024-03-06T09:00:00"),
-        end = LocalDateTime.parse("2024-03-06T11:00:00"),
+        start = LocalDateTime.parse("2024-03-13T09:00:00"),
+        end = LocalDateTime.parse("2024-03-13T11:00:00"),
         description = "Tune in to find out about how we're furthering our mission to organize the world’s information and make it universally accessible and useful.",
         type = 1
     ),
     Event(
         name = "Training",
         color = Color(android.graphics.Color.parseColor("#FFE0B2")),
-        start = LocalDateTime.parse("2024-03-05T05:00:00"),
-        end = LocalDateTime.parse("2024-03-05T06:30:00"),
+        start = LocalDateTime.parse("2024-03-12T05:00:00"),
+        end = LocalDateTime.parse("2024-03-12T06:30:00"),
         description = "Learn about the latest updates to our developer products and platforms from Google Developers.",
         type = 2,
         eventProps = EventProps(
@@ -278,22 +371,22 @@ private val sampleEvents = listOf(
     Event(
         name = "What's new in Android",
         color = Color(0xFF1B998B),
-        start = LocalDateTime.parse("2021-05-18T10:00:00"),
-        end = LocalDateTime.parse("2021-05-18T11:00:00"),
+        start = LocalDateTime.parse("2024-03-12T09:00:00"),
+        end = LocalDateTime.parse("2024-03-12T09:30:00"),
         description = "In this Keynote, Chet Haase, Dan Sandler, and Romain Guy discuss the latest Android features and enhancements for developers.",
     ),
     Event(
-        name = "What's new in Material Design",
+        name = "Broadband, Fault Repair",
         color = Color(0xFF6DD3CE),
-        start = LocalDateTime.parse("2021-05-18T11:00:00"),
-        end = LocalDateTime.parse("2021-05-18T11:45:00"),
+        start = LocalDateTime.parse("2024-03-12T01:00:00"),
+        end = LocalDateTime.parse("2024-03-12T02:00:00"),
         description = "Learn about the latest design improvements to help you build personal dynamic experiences with Material Design.",
     ),
     Event(
-        name = "What's new in Machine Learning",
+        name = "15 mins view",
         color = Color(0xFFF4BFDB),
-        start = LocalDateTime.parse("2021-05-18T10:00:00"),
-        end = LocalDateTime.parse("2021-05-18T11:00:00"),
+        start = LocalDateTime.parse("2024-03-12T03:00:00"),
+        end = LocalDateTime.parse("2024-03-12T03:20:00"),
         description = "Learn about the latest and greatest in ML from Google. We’ll cover what’s available to developers when it comes to creating, understanding, and deploying models for a variety of different applications.",
     ),
     Event(
@@ -351,13 +444,36 @@ fun BasicDayHeader(
     day: LocalDate,
     modifier: Modifier = Modifier,
 ) {
-    Text(
-        text = day.format(DayFormatter),
-        textAlign = TextAlign.Center,
-        modifier = modifier
+    Column(
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(4.dp)
-    )
+            .padding(4.dp),
+        verticalArrangement = Arrangement.Center
+    ) {
+        RoundedDateBox(date = day)
+    }
+}
+
+@Composable
+fun RoundedDateBox(date: LocalDate) {
+    val dayFormatter = DateTimeFormatter.ofPattern("EEE")
+    val dateFormatter = DateTimeFormatter.ofPattern("dd")
+
+    Box(
+        modifier = Modifier
+            .padding(6.dp)
+            .background(
+                color = Color(android.graphics.Color.parseColor("#F0F0F0")),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(top = 8.dp, bottom = 8.dp, start = 18.dp, end = 18.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = dateFormatter.format(date), style = MaterialTheme.typography.h5.copy(fontSize = 24.sp))
+            Text(text = dayFormatter.format(date), style = MaterialTheme.typography.subtitle1.copy(fontSize = 16.sp))
+        }
+    }
 }
 
 @Preview(showBackground = true)
@@ -408,6 +524,10 @@ fun BasicSidebarLabel(
 ) {
     Text(
         text = time.format(HourFormatter),
+        style = TextStyle(
+            fontSize = 16.sp,
+            color = Color(android.graphics.Color.parseColor("#0C0F12"))
+        ),
         modifier = modifier
             .fillMaxHeight()
             .padding(4.dp)
@@ -430,13 +550,22 @@ fun ScheduleSidebar(
     maxTime: LocalTime = LocalTime.MAX,
     label: @Composable (time: LocalTime) -> Unit = { BasicSidebarLabel(time = it) },
 ) {
-    val numMinutes = ChronoUnit.MINUTES.between(minTime, maxTime).toInt() + 1
+
+//    --------------- SETUP START MIN TIME-------------------
+//    var minTimes = LocalTime.parse("08:00", DateTimeFormatter.ofPattern("HH:mm"))
+//    var maxTimes = LocalTime.parse("20:00", DateTimeFormatter.ofPattern("HH:mm"))
+
+    val minTimes = minTime
+    val maxTimes = maxTime
+//    --------------- SETUP END MAX TIME-------------------
+
+    val numMinutes = ChronoUnit.MINUTES.between(minTimes, maxTimes).toInt() + 1
     val numHours = numMinutes / 60
-    val firstHour = minTime.truncatedTo(ChronoUnit.HOURS)
+    val firstHour = minTimes.truncatedTo(ChronoUnit.HOURS)
     val firstHourOffsetMinutes =
-        if (firstHour == minTime) 0 else ChronoUnit.MINUTES.between(minTime, firstHour.plusHours(1))
+        if (firstHour == minTimes) 0 else ChronoUnit.MINUTES.between(minTime, firstHour.plusHours(1))
     val firstHourOffset = hourHeight * (firstHourOffsetMinutes / 60f)
-    val startTime = if (firstHour == minTime) firstHour else firstHour.plusHours(1)
+    val startTime = if (firstHour == minTimes) firstHour else firstHour.plusHours(1)
     Column(modifier = modifier) {
         Spacer(modifier = Modifier.height(firstHourOffset))
         repeat(numHours) { i ->
@@ -575,8 +704,8 @@ fun Schedule(
     maxDate: LocalDate = LocalDate.now().plusDays(daysToAdd),
     minTime: LocalTime = LocalTime.MIN,
     maxTime: LocalTime = LocalTime.MAX,
-    daySize: ScheduleSize = ScheduleSize.FixedSize(256.dp),
-    hourSize: ScheduleSize = ScheduleSize.FixedSize(64.dp),
+    daySize: ScheduleSize = ScheduleSize.FixedSize(120.dp),
+    hourSize: ScheduleSize = ScheduleSize.FixedSize(80.dp),
 ) {
 //    minDate: LocalDate = events.minByOrNull(Event::start)?.start?.toLocalDate() ?: LocalDate.now(),
 //    maxDate: LocalDate = events.maxByOrNull(Event::end)?.end?.toLocalDate() ?: LocalDate.now(),
@@ -616,21 +745,26 @@ fun Schedule(
                 dayWidth = dayWidth,
                 dayHeader = dayHeader,
                 modifier = Modifier
+                    .background(Color(android.graphics.Color.parseColor("#FAFAFA")))
                     .padding(start = with(LocalDensity.current) { sidebarWidth.toDp() })
                     .horizontalScroll(horizontalScrollState)
-                    .onGloballyPositioned { headerHeight = it.size.height }
+                    .onGloballyPositioned {
+                        headerHeight = it.size.height
+                    }
             )
             Row(
                 modifier = Modifier
                     .weight(1f)
                     .align(Alignment.Start)
             ) {
+
                 ScheduleSidebar(
                     hourHeight = hourHeight,
                     minTime = minTime,
                     maxTime = maxTime,
                     label = timeLabel,
                     modifier = Modifier
+                        .background(Color(android.graphics.Color.parseColor("#E8E9E8")))
                         .verticalScroll(verticalScrollState)
                         .onGloballyPositioned { sidebarWidth = it.size.width }
                 )
@@ -645,9 +779,12 @@ fun Schedule(
                     hourHeight = hourHeight,
                     modifier = Modifier
                         .weight(1f)
+                        .background(Color(android.graphics.Color.parseColor("#FAFAFA")))
                         .verticalScroll(verticalScrollState)
                         .horizontalScroll(horizontalScrollState)
                 )
+
+
             }
         }
     }
@@ -711,6 +848,7 @@ fun BasicSchedule(
                 }
 
 //                ---------------Drawing current timeline Start--------------------------
+
                 val currentTimeOffset = ChronoUnit.MINUTES.between(minTime, currentTime).toFloat()
                 val currentTimeY = (currentTimeOffset / 60f) * hourHeight.toPx()
 
